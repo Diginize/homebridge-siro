@@ -15,6 +15,9 @@ tsconfig.json
 # vscode
 .vscode
 
+# idea
+.idea
+
 # nodemon
 nodemon.json
 
