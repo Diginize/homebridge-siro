@@ -9,7 +9,22 @@
         "title": "Name",
         "type": "string",
         "required": true,
-        "default": "Example Dynamic Platform"
+        "default": "Siro Bridge"
+      },
+      "bridgeIp": {
+        "title": "Bridge IP Address",
+        "type": "string",
+        "required": true,
+        "format": "ipv4"
+      },
+      "bridgeKey": {
+        "title": "Bridge Key",
+        "description": "You can find this in the connector app. Go to Settings / About and tap 5 times in the logo.",
+        "type": "string",
+        "required": true,
+        "minLength": 16,
+        "maxLength": 16,
+        "pattern": "^[a-z0-9][a-z0-9-]{14}[a-z0-9]$"
       }
     }
   }
