@@ -10,6 +10,8 @@ import {BridgeConnector, Device, DeviceTypes, GetDeviceList, GetDeviceListAck} f
  * parse the user config and discover/register accessories with Homebridge.
  */
 export class SiroHomebridgePlatform implements DynamicPlatformPlugin {
+  public readonly config: PluginConfig;
+
   public readonly Service: typeof Service = this.api.hap.Service;
   public readonly Characteristic: typeof Characteristic = this.api.hap.Characteristic;
 
@@ -20,9 +22,11 @@ export class SiroHomebridgePlatform implements DynamicPlatformPlugin {
 
   constructor(
     public readonly log: Logger,
-    public readonly config: PluginConfig,
+    config: PlatformConfig,
     public readonly api: API,
   ) {
+    this.config = config as any;
+
     this.bridge = new BridgeConnector({
       bridgeIp: this.config.bridgeIp,
       bridgeKey: this.config.bridgeKey

@@ -13,6 +13,9 @@ export class RadioMotorPlatformAccessory extends AbstractAccessory {
   private windowCoverService: Service|undefined;
   private batteryService: Service|undefined;
 
+  private targetPosition: number = 0;
+  private lastTargetUpdate: number = 0;
+
   constructor(
     platform: SiroHomebridgePlatform,
     accessory: PlatformAccessory<AccessoryContext>,
@@ -63,44 +66,40 @@ export class RadioMotorPlatformAccessory extends AbstractAccessory {
     this.platform.log.debug('Triggered GET CurrentPosition');
 
     await this.updateStatus();
-    callback(null, this.status?.currentPosition || 0);
+    const status = 100 - (this.status?.currentPosition || 0);
+    this.platform.log.info('GET CurrentPosition:', status);
+    callback(null, status);
   }
 
   async handleTargetPositionGet(callback) {
-    this.platform.log.debug('Triggered GET TargetPosition');
+    this.platform.log.info('Triggered GET TargetPosition');
 
-    await this.updateStatus();
-    callback(null, this.status?.currentPosition || 0);
+    let status = this.targetPosition;
+    if (
+        this.targetPosition !== 100 - (this.status?.currentPosition || 0) &&
+        Math.abs((this.lastStatusUpdate || 0) - this.lastTargetUpdate) > 30000
+    ) {
+      status = 100 - (this.status?.currentPosition || 0);
+    }
+
+    this.platform.log.info('GET TargetPosition:', status);
+    callback(null, status);
   }
 
   async handleTargetPositionSet(value, callback) {
-    this.platform.log.debug('Triggered SET TargetPosition:' + value);
+    this.platform.log.info('Triggered SET TargetPosition:' + value);
+    this.targetPosition = value;
+    this.lastTargetUpdate = Date.now();
 
-    await this.sendCommand({
-      targetPosition: value
+    this.sendCommand({
+      targetPosition: 100 - value
     });
     callback(null);
   }
 
   async handlePositionStateGet(callback) {
     this.platform.log.debug('Triggered GET PositionState');
-
-    await this.updateStatus();
-    let status: number;
-    switch (this.status?.operation) {
-      case Operations.OpenUp:
-        status = this.platform.Characteristic.PositionState.DECREASING;
-        break;
-
-      case Operations.CloseDown:
-        status = this.platform.Characteristic.PositionState.INCREASING;
-        break;
-
-      default:
-        status = this.platform.Characteristic.PositionState.STOPPED;
-    }
-
-    callback(null, status);
+    callback(null, this.platform.Characteristic.PositionState.STOPPED);
   }
 
   async handleBatteryLevelGet(callback) {

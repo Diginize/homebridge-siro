@@ -5,6 +5,7 @@ import {DeviceCommand, DeviceStatus, ReadDevice, ReadDeviceAck, WriteDevice, Wri
 export abstract class AbstractAccessory {
 
     protected status: DeviceStatus|undefined;
+    protected statusUpdateInProgress: boolean = false;
     protected lastStatusUpdate: number|undefined;
 
     protected constructor(
@@ -21,33 +22,54 @@ export abstract class AbstractAccessory {
     }
 
     protected async updateStatus(): Promise<void> {
+        if (this.statusUpdateInProgress) {
+            return;
+        }
+        this.statusUpdateInProgress = true;
+
         // Update max. every 0.5 seconds
-        if (this.lastStatusUpdate && (Date.now() - this.lastStatusUpdate) < 500) {
+        if (this.lastStatusUpdate && (Date.now() - this.lastStatusUpdate) < 1000) {
+            this.statusUpdateInProgress = false;
             return;
         }
 
-        const statusResponse = await this.platform.bridge.sendMessage<ReadDevice, ReadDeviceAck>({
-            msgID: `${Date.now()}`,
-            msgType: 'ReadDevice',
-            mac: this.accessory.context.device.mac,
-            deviceType: this.accessory.context.device.deviceType,
-        });
+        try {
+            const statusResponse = await this.platform.bridge.sendMessage<ReadDevice, ReadDeviceAck>({
+                msgID: `${Date.now()}`,
+                msgType: 'ReadDevice',
+                mac: this.accessory.context.device.mac,
+                deviceType: this.accessory.context.device.deviceType,
+            });
 
-        this.status = statusResponse.data;
-        this.lastStatusUpdate = Date.now();
+            this.platform.log.debug('ReadDevice Response', statusResponse);
+            this.status = statusResponse.data;
+            this.lastStatusUpdate = Date.now();
+        } catch (e) {
+            // catch timeout
+            this.platform.log.error('Request Timeout (ReadDevice)', this.accessory.context.device.mac);
+        } finally {
+            this.statusUpdateInProgress = false;
+        }
     }
 
-    protected async sendCommand(command: DeviceCommand): Promise<DeviceStatus> {
-        const statusResponse = await this.platform.bridge.sendMessage<WriteDevice, WriteDeviceAck>({
-            msgID: `${Date.now()}`,
-            msgType: 'WriteDevice',
-            mac: this.accessory.context.device.mac,
-            deviceType: this.accessory.context.device.deviceType,
-            AccessToken: this.platform.bridge.getAccessToken(),
-            data: command
-        });
+    protected async sendCommand(command: DeviceCommand): Promise<void> {
+        try {
+            const statusResponse = await this.platform.bridge.sendMessage<WriteDevice, WriteDeviceAck>({
+                msgID: `${Date.now()}`,
+                msgType: 'WriteDevice',
+                mac: this.accessory.context.device.mac,
+                deviceType: this.accessory.context.device.deviceType,
+                AccessToken: this.platform.bridge.getAccessToken(),
+                data: command
+            });
 
-        return statusResponse.data;
+            this.platform.log.debug('WriteDevice Response', statusResponse);
+            this.status = statusResponse.data;
+            this.lastStatusUpdate = Date.now();
+        } catch (e) {
+            // catch timeout
+            this.platform.log.error('Request Timeout (ReadDevice)', this.accessory.context.device.mac);
+        }
     }
 
 }

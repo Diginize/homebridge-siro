@@ -11,7 +11,6 @@ export const PLATFORM_NAME = 'HomebridgeSiro';
 export const PLUGIN_NAME = 'homebridge-siro';
 
 export interface PluginConfig extends PlatformConfig {
-    name: string;
     bridgeIp: string;
     bridgeKey: string;
 }
