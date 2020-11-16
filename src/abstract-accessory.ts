@@ -4,9 +4,9 @@ import {DeviceCommand, DeviceStatus, ReadDevice, ReadDeviceAck, WriteDevice, Wri
 
 export abstract class AbstractAccessory {
 
-    protected status: DeviceStatus|undefined;
-    protected statusUpdateInProgress: boolean = false;
-    protected lastStatusUpdate: number|undefined;
+    protected status: DeviceStatus | undefined;
+    protected statusUpdateInProgress = false;
+    protected lastStatusUpdate: number | undefined;
 
     protected constructor(
         protected readonly platform: SiroHomebridgePlatform,
@@ -60,7 +60,7 @@ export abstract class AbstractAccessory {
                 mac: this.accessory.context.device.mac,
                 deviceType: this.accessory.context.device.deviceType,
                 AccessToken: this.platform.bridge.getAccessToken(),
-                data: command
+                data: command,
             });
 
             this.platform.log.debug('WriteDevice Response', statusResponse);
